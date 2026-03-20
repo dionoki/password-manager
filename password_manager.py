@@ -1,6 +1,6 @@
 #Início primeiro projeto ( Sistema de gerenciamento de senhas com hash )
 import json
-
+import hashlib
 #Dados, arquivos ---------------------------------------------------------------------------------------------------------------------------------------------------------
 def salvar_dados():
   geral = {
@@ -21,49 +21,74 @@ def carregar_dados():
 try: 
   senha_mestre, dados = carregar_dados()
 except:
-  senha_mestre = "1109"
-  dados = {
-    'gmail': {
-        'login': 'usuario@gmail.com',
-        'senha': '32'},
-    'netflix': {
-        'login': 'usuario.netflix',
-        'senha': '123456789'}}
+    print("===============Bem-Vindo ao Keynoki!===============")
+    senhapadrao = input('Crie agora sua senha e faça bom proveito de nosso sistema: ')
+    cripto256 = hashlib.sha256(senhapadrao.encode())
+    senha_mestre = cripto256.hexdigest()
+    dados = {}
+    salvar_dados()
 
  # Função principal do codigo ------------------------------------------------------------------------------------------------------------------------------------------------
 
 def mostrar_servicos(senhas):
     print('Serviços Disponíveis:')
     for servico in senhas:
-        print('- ' + servico)
+     print('- ' + servico)
 
 def pedir_servico():
    servico = input("Selecione um serviço: ").strip().lower()
    return servico
 
 def autenticar():
- senha = input('Digite a senha: ').strip()
- return senha == senha_mestre
+   senha = input('Digite a senha: ').strip()
+   criarsenha = hashlib.sha256(senha.encode())
+   senhasalva = criarsenha.hexdigest()
+   return senhasalva == senha_mestre
  
 def mostrar_dados(servico, dados):
-     print('Serviço encontrado!')
-     print("login:", dados[servico]['login'])
-     print("senha:", dados[servico]['senha'])
+   print('Serviço encontrado!')
+   print("login:", dados[servico]['login'])
+   print("senha:", dados[servico]['senha'])
      
 # Sistema principal ---------------------------------------------------------------------------------------------------------------------------------------------------------
 while True:
+ print ('1 - Adicione um novo login \n2 - Mostrar senhas salvas\n3 - Sair')
+ comando = input('Selecione uma opção:')   
+    
+ if comando == ('1'):
+    print ('Que tipo de conta você está adicionando?')
+    conta = input ('- Google \n- Microsoft \n- Streaming\n- Outros \n ')
+
+    login = input('Digite seu novo login:')
+    senha = input('Digite sua nova senha:')
+     
+    dados[conta] = {"login": login, "senha": senha }
+    salvar_dados()
+    print ('Login salvo com sucesso!')
+       
+ elif comando == ('2'):
     mostrar_servicos(dados)
     servico = pedir_servico()
-
+    
     if servico in dados:
+       if autenticar():
+         mostrar_dados(servico, dados)
+       else:
+         print('Acesso negado')
 
-      if autenticar():
-            mostrar_dados(servico, dados)
-      else:
-            print('Acesso negado')
-      break
     else:
-        print('Serviço não encontrado!')
+     print('Serviço não encontrado!')
+ 
+ 
+ elif comando == ('3'):
+        print ('Até logo!')
+        break          
+        
+    
 
-salvar_dados()
+
+   
+
+
+
 
