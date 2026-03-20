@@ -1,7 +1,10 @@
 #Início primeiro projeto ( Sistema de gerenciamento de senhas com hash )
 import json
 import hashlib
+from cryptography.fernet import Fernet
+
 #Dados, arquivos ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
 def salvar_dados():
   geral = {
      "senha_mestre": senha_mestre,
@@ -20,13 +23,23 @@ def carregar_dados():
 
 try: 
   senha_mestre, dados = carregar_dados()
+  
+  with open('Chave.key', 'rb') as arquivo_da_chave:
+     chave_lida = arquivo_da_chave.read()# < ----- SALVA OQ LEU AQUI
+
+     f= Fernet(chave_lida)
 except:
-    print("===============Bem-Vindo ao Keynoki!===============")
+    print("===============Bem-Vindo ao KeyNoki!===============")
     senhapadrao = input('Crie agora sua senha e faça bom proveito de nosso sistema: ')
     cripto256 = hashlib.sha256(senhapadrao.encode())
     senha_mestre = cripto256.hexdigest()
     dados = {}
     salvar_dados()
+
+    chave = Fernet.generate_key() 
+    with open('Chave.key', "wb") as arquivo_da_chave:
+     arquivo_da_chave.write(chave)
+    f = Fernet(chave)
 
  # Função principal do codigo ------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -47,9 +60,16 @@ def autenticar():
  
 def mostrar_dados(servico, dados):
    print('Serviço encontrado!')
-   print("login:", dados[servico]['login'])
-   print("senha:", dados[servico]['senha'])
-     
+   login_salvo = dados[servico]['login'].encode()
+   login_real = f.decrypt(login_salvo).decode()
+                                                               #ambas linhas de código servem pra descriptografar oq está dentro do json afim de mostrar a senha depois da autorização por senha estar correta
+   senha_salva = dados[servico]['senha'].encode()
+   senha_real = f.decrypt(senha_salva).decode()
+
+   print("login:", login_real)
+   print("senha:", senha_real)
+
+
 # Sistema principal ---------------------------------------------------------------------------------------------------------------------------------------------------------
 while True:
  print ('1 - Adicione um novo login \n2 - Mostrar senhas salvas\n3 - Sair')
@@ -60,9 +80,12 @@ while True:
     conta = input ('- Google \n- Microsoft \n- Streaming\n- Outros \n ')
 
     login = input('Digite seu novo login:')
+    login_trancado = login.encode('utf-8')
+    log_trancado = f.encrypt(login_trancado)
     senha = input('Digite sua nova senha:')
-     
-    dados[conta] = {"login": login, "senha": senha }
+    cript = senha.encode('utf-8') # Codifica pra bytes
+    senha_trancada = f.encrypt(cript) #ele pega os bytes do encode, mastiga e cospe aquela sopa de letras inteira que está agora gravada no json
+    dados[conta] = {"login": log_trancado.decode(), "senha": senha_trancada.decode() }  #o .decode serve pra decodificar a sopa de letras pro json nao surtar 
     salvar_dados()
     print ('Login salvo com sucesso!')
        
