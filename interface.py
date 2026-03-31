@@ -332,25 +332,9 @@ class TelaAdicionarSenha(ctk.CTkFrame):
             self.label_mensagem.configure(text="Preencha todos os campos!", text_color="red")
             return
         
-        if servico.lower() in gm.dados:
-            self.label_mensagem.configure(text="Este serviço já existe!", text_color="orange")
-            return
- 
- #Criptografar dados ------------------------------------------------------------------------------------------------------------------------------------------------------   
         try:
-            login_cripto = gm.f.encrypt(login.encode()).decode()
-            senha_cripto = gm.f.encrypt(senha.encode()).decode()
+            gm.adicionar_senha(servico, login, senha)
             
-#Salvar no dicionário ------------------------------------------------------------------------------------------------------------------------------------------------------
-            gm.dados[servico.lower()] = {
-                "login": login_cripto,
-                "senha": senha_cripto
-            }
-            
-#Salvar no arquivo------------------------------------------------------------------------------------------------------------------------------------------------------
-            gm.salvar_dados()
-            
-#Limpar campos------------------------------------------------------------------------------------------------------------------------------------------------------
             self.entrada_servico.delete(0, ctk.END)
             self.entrada_login.delete(0, ctk.END)
             self.entrada_senha.delete(0, ctk.END)
@@ -383,6 +367,16 @@ class TelaMostrarSenhas(ctk.CTkFrame):
         frame_botoes = ctk.CTkFrame(self)
         frame_botoes.pack(fill="x", padx=20, pady=10)
         
+        botao_recarregar = ctk.CTkButton(
+         frame_botoes,
+         text="Recarregar",
+         height=40,
+         font=("Helvetica", 12, "bold"),
+         width=100,
+         command=self.atualizar_senhas
+        )
+        botao_recarregar.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        
         botao_voltar = ctk.CTkButton(
          frame_botoes,
          text="Voltar",
@@ -390,16 +384,21 @@ class TelaMostrarSenhas(ctk.CTkFrame):
          font=("Helvetica", 12, "bold"),
          fg_color="#555555",
          hover_color="#444444",
+         width=100,
          command=lambda: self.controller.mostrar_frame(TelaMenu)
         )
-        botao_voltar.pack(fill="x")
+        botao_voltar.pack(side="left", fill="x", expand=True, padx=(5, 0))
+        
+        self.atualizar_senhas()
     
     def atualizar_senhas(self):
 #Remover widgets antigos------------------------------------------------------------------------------------------------------------------------------------------------------
         for widget in self.frame_scrollavel.winfo_children():
             widget.destroy()
         
-        if not gm.dados:
+        senhas_por_servico = gm.obter_senhas_por_servico()
+        
+        if not senhas_por_servico:
             label_vazio = ctk.CTkLabel(
                 self.frame_scrollavel,
                 text="Nenhuma senha salva ainda",
@@ -409,84 +408,78 @@ class TelaMostrarSenhas(ctk.CTkFrame):
             label_vazio.pack(pady=40)
             return
         
-#Mostrar cada serviço------------------------------------------------------------------------------------------------------------------------------------------------------
-        for servico, dados in gm.dados.items():
-            frame_servico = ctk.CTkFrame(self.frame_scrollavel, corner_radius=10)
-            frame_servico.pack(fill="x", pady=10)
-            
-#Nome do serviço------------------------------------------------------------------------------------------------------------------------------------------------------
+#Mostrar cada serviço com múltiplas senhas------------------------------------------------------------------------------------------------------------------------------------------------------
+        for servico, senhas_lista in senhas_por_servico.items():
             label_servico = ctk.CTkLabel(
-                frame_servico,
+                self.frame_scrollavel,
                 text=f"{servico.upper()}",
                 font=("Helvetica", 14, "bold")
             )
-            label_servico.pack(pady=(10, 5), padx=15, anchor="w")
+            label_servico.pack(fill="x", pady=(15, 10), padx=10)
             
+            for senha_info in senhas_lista:
+                frame_senha = ctk.CTkFrame(self.frame_scrollavel, corner_radius=10, fg_color="#2b2b2b")
+                frame_senha.pack(fill="x", pady=8, padx=10)
+                
 #Login------------------------------------------------------------------------------------------------------------------------------------------------------ 
-            frame_login = ctk.CTkFrame(frame_servico)
-            frame_login.pack(fill="x", padx=15, pady=5)
-            
-            label_login_texto = ctk.CTkLabel(frame_login, text="Login:", font=("Helvetica", 11))
-            label_login_texto.pack(side="left", padx=(0, 10))
-            
-            try:
-                login_real = gm.f.decrypt(dados['login'].encode()).decode()
-                label_login_valor = ctk.CTkLabel(frame_login, text=login_real, font=("Helvetica", 11), text_color="#64b5f6")
+                frame_login = ctk.CTkFrame(frame_senha, fg_color="transparent")
+                frame_login.pack(fill="x", padx=15, pady=(10, 5))
+                
+                label_login_texto = ctk.CTkLabel(frame_login, text="Login/Email:", font=("Helvetica", 10, "bold"))
+                label_login_texto.pack(side="left", padx=(0, 10))
+                
+                label_login_valor = ctk.CTkLabel(frame_login, text=senha_info['login'], font=("Helvetica", 10), text_color="#64b5f6")
                 label_login_valor.pack(side="left")
-            except:
-                label_login_valor = ctk.CTkLabel(frame_login, text="[Erro ao descriptografar]", font=("Helvetica", 11), text_color="red")
-                label_login_valor.pack(side="left")
-            
-#Senha------------------------------------------------------------------------------------------------------------------------------------------------------
-            frame_senha = ctk.CTkFrame(frame_servico)
-            frame_senha.pack(fill="x", padx=15, pady=5)
-            
-            label_senha_texto = ctk.CTkLabel(frame_senha, text="Senha:", font=("Helvetica", 11))
-            label_senha_texto.pack(side="left", padx=(0, 10))
-            
-            self.label_senha_valor = ctk.CTkLabel(frame_senha, text="••••••••", font=("Helvetica", 11), text_color="#64b5f6")
-            self.label_senha_valor.pack(side="left", padx=(0, 10))
-            
-            def criar_funcao_toggle(servico_nome, dados_senha):
-                def toggle_senha():
-                    if self.label_senha_valor.cget("text") == "••••••••":
-                        try:
-                            senha_real = gm.f.decrypt(dados_senha['senha'].encode()).decode()
-                            self.label_senha_valor.configure(text=senha_real)
-                        except:
-                            self.label_senha_valor.configure(text="[Erro]", text_color="red")
-                    else:
-                        self.label_senha_valor.configure(text="••••••••", text_color="#64b5f6")
-                return toggle_senha
-            
-            botao_toggle = ctk.CTkButton(
-                frame_senha,
-                text="👁️",
-                width=30,
-                height=25,
-                font=("Helvetica", 10),
-                command=criar_funcao_toggle(servico, dados)
-            )
-            botao_toggle.pack(side="left", padx=(0, 5))
-            
-            def criar_funcao_deletar(servico_nome):
-                def deletar():
-                    del gm.dados[servico_nome]
-                    gm.salvar_dados()
-                    self.atualizar_senhas()
-                return deletar
-            
-            botao_deletar = ctk.CTkButton(
-                frame_senha,
-                text="Deletar Senha",
-                width=30,
-                height=25,
-                font=("Helvetica", 10),
-                fg_color="#d32f2f",
-                hover_color="#b71c1c",
-                command=criar_funcao_deletar(servico)
-            )
-            botao_deletar.pack(side="left")
+                
+#Senha com toggle------------------------------------------------------------------------------------------------------------------------------------------------------
+                frame_senha_display = ctk.CTkFrame(frame_senha, fg_color="transparent")
+                frame_senha_display.pack(fill="x", padx=15, pady=5)
+                
+                label_senha_texto = ctk.CTkLabel(frame_senha_display, text="Senha:", font=("Helvetica", 10, "bold"))
+                label_senha_texto.pack(side="left", padx=(0, 10))
+                
+                senha_label = ctk.CTkLabel(frame_senha_display, text="••••••••", font=("Helvetica", 10), text_color="#64b5f6")
+                senha_label.pack(side="left", padx=(0, 10))
+                
+                def criar_funcao_toggle(label, senha_criptografada):
+                    def toggle():
+                        if label.cget("text") == "••••••••":
+                            try:
+                                senha_real = gm.f.decrypt(senha_criptografada.encode()).decode()
+                                label.configure(text=senha_real)
+                            except:
+                                label.configure(text="[Erro]", text_color="red")
+                        else:
+                            label.configure(text="••••••••", text_color="#64b5f6")
+                    return toggle
+                
+                botao_toggle = ctk.CTkButton(
+                    frame_senha_display,
+                    text="👁️",
+                    width=35,
+                    height=25,
+                    font=("Helvetica", 11),
+                    command=criar_funcao_toggle(senha_label, senha_info['senha'])
+                )
+                botao_toggle.pack(side="left", padx=(0, 5))
+                
+                def criar_funcao_deletar(id_senha):
+                    def deletar():
+                        gm.deletar_senha(id_senha)
+                        self.atualizar_senhas()
+                    return deletar
+                
+                botao_deletar = ctk.CTkButton(
+                    frame_senha_display,
+                    text="Deletar Senha",
+                    width=35,
+                    height=25,
+                    font=("Helvetica", 11),
+                    fg_color="#d32f2f",
+                    hover_color="#b71c1c",
+                    command=criar_funcao_deletar(senha_info['id'])
+                )
+                botao_deletar.pack(side="left")
 
 
 #EXECUTAR O APP ------------------------------------------------------------------------------------------------------------------------------------------------------
