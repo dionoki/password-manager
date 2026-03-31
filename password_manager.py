@@ -56,19 +56,8 @@ class GerenciadorSenhas:
                 self.f = Fernet(chave_lida)
 
         except:
-            print("===============Bem-Vindo ao KeyNoki!===============")
-            senhapadrao = input('Crie agora sua senha e faça bom proveito de nosso sistema: ')
-            cripto256 = hashlib.sha256(senhapadrao.encode())
-
-            self.senha_mestre = cripto256.hexdigest()
-            self.dados = {}
-
-            chave = Fernet.generate_key()
-            with open('Chave.key', "wb") as arquivo_da_chave:
-                arquivo_da_chave.write(chave)
-            self.f = Fernet(chave)
-            self.salvar_dados()
-
+            pass
+            
     def carregar_dados(self):
         with open("arquivo.json", "r", encoding='utf-8') as arquivo:
             geral = json.load(arquivo)
