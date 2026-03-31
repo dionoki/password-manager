@@ -11,6 +11,7 @@ class GerenciadorSenhas:
         self.senha_mestre = None
         self.dados = {}
         self.f = None
+        self.contador_id = 0
         self.init_sistema()
 
     def salvar_dados(self):
@@ -47,6 +48,41 @@ class GerenciadorSenhas:
 
         print("login:", login_real)
         print("senha:", senha_real)
+
+    def adicionar_senha(self, servico, login, senha):
+        """Adiciona uma nova senha com ID único"""
+        self.contador_id += 1
+        id_unico = f"id_{self.contador_id}"
+        
+        self.dados[id_unico] = {
+            'servico': servico,
+            'login': login,
+            'senha': self.f.encrypt(senha.encode()).decode() if self.f else senha
+        }
+        self.salvar_dados()
+        return id_unico
+    
+    def deletar_senha(self, id_senha):
+        """Deleta uma senha pelo ID"""
+        if id_senha in self.dados:
+            del self.dados[id_senha]
+            self.salvar_dados()
+            return True
+        return False
+    
+    def obter_senhas_por_servico(self):
+        """Retorna senhas agrupadas por serviço"""
+        senhas_agrupadas = {}
+        for id_senha, dados in self.dados.items():
+            servico = dados.get('servico', 'Desconhecido')
+            if servico not in senhas_agrupadas:
+                senhas_agrupadas[servico] = []
+            senhas_agrupadas[servico].append({
+                'id': id_senha,
+                'login': dados.get('login', ''),
+                'senha': dados.get('senha', '')
+            })
+        return senhas_agrupadas
 
     def init_sistema(self):
         try:
