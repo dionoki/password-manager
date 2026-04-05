@@ -9,13 +9,9 @@ Ainda está bem no começo, mas vou evoluindo aos poucos e melhorando o código 
 - Criptografia SHA-256 na Senha Mestra.
 - Criptografia Fernet nas senhas e logins salvos.
 - Código organizado e fácil de ler.
+- Interface atualizada e utilizavel
+- Sistema intuitivo e simples de usar
 
-O meu objetivo final é:
-
-- Construir uma interface intuitiva e bonita de se ver.
-- Melhorar a infraestrutura do sistema
-- Estudar mais sobre as criptografias usadas e ver no que posso melhorar na segurança
-- Ser um aplicativo completo e utilizavel pra qualquer pessoa.
-  
+Para meu primeiro projeto, o objetivo foi concluído, absorvi muitos ensinamentos e isso com certeza é um ponta-pé inicial em minha carreira!!!
 
 Espero que eu continue evoluindo aos poucos, este é meu primeiro projeto da vida, estou aprendendo, estudando e praticando ao mesmo tempo!
